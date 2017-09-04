@@ -42,24 +42,6 @@ else:
 myseg = MySegment()
 opt_Document = DocumentsOnMysql()
 
-def plot_confusion_matrix(cm, title = "Confusion matrix", cmap = plt.cm.Blues):
-    classes = [       u'交通肇事罪',
-                      u'过失致人死亡罪',
-                      u'故意杀人罪',
-                      u'故意伤害罪',
-                      u'过失致人重伤罪',
-                      u'抢劫罪',
-                      u'诈骗罪',
-                      u'拐卖妇女儿童罪']
-    plt.imshow(cm, interpolation = "nearest", cmap = cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation = 45, fontproperties=myfont)
-    plt.yticks(tick_marks, classes,fontproperties=myfont)
-    plt.tight_layout()
-    plt.ylabel("True label")
-    plt.xlabel("Predicted label")
 
 def rf_similarity(path_vec):
     fea_size = len(path_vec)
@@ -263,6 +245,7 @@ def resorted_data(document_index, document_vec):
     sorted_merge = sorted(merge_data, key = lambda t: t[0])
     document_all_id_list2, x_sample2 = zip(*sorted_merge)
     return document_all_id_list2, x_sample2
+
 if __name__ == "__main__":
     while(True):
         print("请输入一句话或空格间隔的关键词，回车结束： ")
