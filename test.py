@@ -25,6 +25,16 @@ if __name__ == "__main__":
     # a = np.array([1,2,3,4,5,5,6,7,8])
     # b = np.array([1,3,5])
     # print(a[b])
-    myseg = MySegment()
-    a = myseg.sen2word("张某酒后驾车，之后逃逸，最后在海淀区被警察逮捕")
-    print(' '.join(a))
+
+    # myseg = MySegment()
+    # a = myseg.sen2word("张某酒后驾车，之后逃逸，最后在海淀区被警察逮捕")
+    # print(' '.join(a))
+
+    import os
+    root = BasePath + "/seg_corpus"
+    files = os.listdir(root)
+    for file in files: # 遍历文件夹
+        if not os.path.isdir(file): # 判断是否是文件夹，不是文件夹则打开
+            json_data = json.load()
+
+        # print(files)

@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib as mpl
 from data_helper import *
 import matplotlib.pyplot as plt
+from seg_main import *
 myfont = mpl.font_manager.FontProperties(fname="/usr/share/fonts/truetype/wqy/wqy-microhei.ttc")
 mpl.rcParams['axes.unicode_minus'] = False
 np.seterr(divide='ignore', invalid='ignore')
@@ -77,6 +78,32 @@ def sentences2docvec(model, sentences, vec_type = "average"):
         i = i + 1
     np.savetxt(BasePath + "/word2vec_model/corpus_w2v_" + vec_type + ".txt", np.array(corpus_vec))
 
+def seg_criminal_data(criminal, myseg, mypos, opt_document):
+    print(1)
+    content_list = list()
+    result_list = list()
+    id_list = list()
+    index = 0
+    iter = opt_Document.findbycriminal(criminal)
+
+    for i in iter:
+        index += 1
+        content_wordlist, result_wordlist = content_resultforword2vec(myseg, i[25])
+        content_wordlist = mypos.words2pos(content_wordlist, ['n', 'nl', 'ns', 'v'])
+        result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
+        content_list.append(content_wordlist)
+        result_list.append(result_wordlist)
+        id_list.append(i[0])
+
+    res_dict = {'id_list': id_list,
+                'criminal': criminal,
+                'content_wordlist':content_list,
+                'result_wordlisr': result_list
+                }
+
+    with open(BasePath + "/seg_corpus/"+criminal + ".json", 'wb') as fp:
+        encode_json = json.dump(res_dict, fp, ensure_ascii=False)
+    return index
 
 
 if __name__ == "__main__":
@@ -84,10 +111,47 @@ if __name__ == "__main__":
     shuffle_indices = np.random.permutation(5)
     print(shuffle_indices)
 
-    num_topics = 100
-    dev_sample_percentage = .3
-    filepath_list = [BasePath + "/data/judgment" +"full_finance_" +str(i)+ "_" + ".txt" for i in range(0,8)]
-    x_data, y_data = read_seg_document_list(filepath_list)
+
+    criminal_list = ['交通肇事罪',  # 危险驾驶罪（危险 驾驶罪）
+                     '过失致人死亡罪', # 故意杀人罪（故意 杀人 杀人罪） 故意伤害罪（故意 伤害 伤害罪）
+                      '故意杀人罪',
+                      '故意伤害罪',
+                      '过失致人重伤罪',
+                      '抢劫罪',
+                      '诈骗罪', #（诈骗 诈骗罪 诈骗案）
+                      '拐卖妇女儿童罪'
+                      ]
+
+    opt_Document = DocumentsOnMysql()
+    myseg = MySegment()
+    mypos = MyPostagger()
+
+    test = [seg_criminal_data(criminal, myseg, mypos, opt_Document) for criminal in criminal_list]
+    print(test)
+
+
+    # content_list = list()
+    # result_list = list()
+    # for i in it:
+    #     print(i[0]) # id
+    #     print(i[26])
+    #     # print(i[25]) # content
+    #     content_wordlist, result_wordlist = content_resultforword2vec(myseg, i[25])
+    #     content_wordlist = mypos.words2pos(content_wordlist,  ['n', 'nl', 'ns', 'v'])
+    #     result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
+    #     content_list.append(content_wordlist)
+    #     result_list.append(result_wordlist)
+    # myseg.close()
+    # mypos.close()
+    # print("-----------------------------------------")
+
+    # num_topics = 100
+    # dev_sample_percentage = .3
+    # filepath_list = [BasePath + "/data/judgment" +"full_finance_" +str(i)+ "_" + ".txt" for i in range(0,8)]
+    # x_data, y_data = read_seg_document_list(filepath_list)
+
+
+
 
 
 
