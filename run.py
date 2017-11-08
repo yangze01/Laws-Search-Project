@@ -1,4 +1,6 @@
 #coding=utf8
+import logging
+import logging.config
 from flask import Flask, render_template
 from flask import request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 # from flask_socketio import SocketIO, emit, disconnect
@@ -7,14 +9,22 @@ app = Flask(__name__)
 app.secret_key = '!@#$%^&*()'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.debug = True
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='log_data/test.log',
+                    filemode='w')
+root_logger = logging.getLogger('root')
 
 @app.route('/api_relation', methods=['GET', 'POST'])
 def get_relation_dict():
+
 	if request.method == 'POST':
 		relation_word = request.form['word']
 	else:
 		relation_word = request.args.get('word')
 	relation_ret_dict = get_w2v_key(relation_word)
+
 	return jsonify(relation_ret_dict)
 
 @app.route('/api_sim',methods=['GET', 'POST'])
@@ -27,9 +37,9 @@ def get_sim_dict():
 	else:
 		search_type = request.args.get('search_type')
 		sentence = request.args.get("sentence")
-	print(search_type)
-	print(sentence)
-
+	# print(search_type)
+	# print(sentence)
+	logging.info("the search sentence is: " + str(sentence))
 	document_ret_dict = impl_sim(search_type, sentence)
 	return jsonify(document_ret_dict)
 

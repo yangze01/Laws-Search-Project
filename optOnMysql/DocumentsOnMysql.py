@@ -49,10 +49,17 @@ class DocumentsOnMysql(object):
             print("return data")
             return it
 
-
-
-
-
+    def getCriminalOnSql(self):
+        """
+        :return: criminal list
+        """
+        cur = self.opt_OnMySql.exeQuery("select distinct(criminal) from document;")
+        it = cur.fetchall()
+        if it == None:
+            print("No data to fetch")
+        else:
+            print("return data")
+            return it
 
 
     def findall(self):
@@ -64,6 +71,7 @@ class DocumentsOnMysql(object):
         else:
             print("fetch all data")
             return it
+
 
     def insertOneDocuments(self,document_unit):
         '''

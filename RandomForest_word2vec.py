@@ -114,6 +114,7 @@ def get_candidate(topn, query_vec, corpus_vec):
     vec_sim = np.dot(query_vec, corpus_vec.T)  / (np.linalg.norm(corpus_vec, axis = 1) * np.linalg.norm(query_vec))
     topn_candidate = heapq.nlargest(topn, range(len(vec_sim)), vec_sim.take)
     return topn_candidate, vec_sim[topn_candidate]
+
 def get_full_text_candidate(topn, seg_sentence):
     request_data = requests.post("http://10.168.103.101:8000/document_solr/document/list.controller",data={'queryString':seg_sentence})
     decode_json = json.loads(request_data.content)
@@ -130,7 +131,7 @@ def get_clf_sim(clf_model, seg_sentence_vec, candidate_vec, topn_candidate_index
     seg_sentence_array = path_of_seg_sentence.toarray()
     sample_array = path_of_sample.toarray()
     clf_sim = np.sum(seg_sentence_array & sample_array, axis=1) / float(np.sum(seg_sentence_array & seg_sentence_array))
-    if len(clf_sim >50):
+    if len(clf_sim) >50:
         top_clf_index = heapq.nlargest(50, range(len(clf_sim)), clf_sim.take)
     else:
         top_clf_index = heapq.nlargest(len(topn_candidate_index), range(len(clf_sim)), clf_sim.take)
@@ -230,14 +231,15 @@ def get_keywords(seg_sentence):
 
 def impl_sim(search_type, sentence):
     seg_sentence = myseg.sen2word(sentence.encode('utf8'))
-
+    print(seg_sentence)
     return_word_list, return_relation_list = get_keywords(seg_sentence)
+    # print(return_word_list)
     document_ret_dict = get_sim_sentence(clf, seg_sentence, x_sample)
-    print(document_ret_dict)
+    # print(document_ret_dict)
     return_json_list = {'keywords':return_word_list,
                         'result':document_ret_dict,
                         'relation':return_relation_list}
-
+    print(return_json_list)
     return return_json_list
 
 def resorted_data(document_index, document_vec):
@@ -264,22 +266,5 @@ if __name__ == "__main__":
             # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             print('\n'.join(opt_Document.getById(json_obj['id'])[25].split('|')))
             j += 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

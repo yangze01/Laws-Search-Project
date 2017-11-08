@@ -48,8 +48,9 @@ if __name__ == "__main__":
     id = 1
     for i in it:
         print(i[0])
-        opt_connect.exeQuery("update document set _id = '{0}' where _id = '{1}'".format(id,i[0]))
-        id += 1
+
+        # opt_connect.exeQuery("update document set _id = '{0}' where _id = '{1}'".format(id,i[0]))
+        # id += 1
     # test = opt_connect.exeUpdate("update document set keywords = '{0}' where _id = '{1}'".format("测试,插入,数据",1))
     # test = opt_connect.exeQuery("insert into document ({0}) values ({1})".format('url', "1"))
-    opt_connect.connClose()
+    # opt_connect.connClose()

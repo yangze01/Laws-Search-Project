@@ -2,6 +2,7 @@
 from My_BasePath import *
 import numpy as np
 import matplotlib as mpl
+from optOnMysql.DocumentsOnMysql import *
 from data_helper import *
 import matplotlib.pyplot as plt
 from seg_main import *
@@ -78,56 +79,132 @@ def sentences2docvec(model, sentences, vec_type = "average"):
         i = i + 1
     np.savetxt(BasePath + "/word2vec_model/corpus_w2v_" + vec_type + ".txt", np.array(corpus_vec))
 
-def seg_criminal_data(criminal, myseg, mypos, opt_document):
-    print(1)
+
+def content_resultforword2vec(myseg, document):
+    judge_pattern = re.compile(u"(.*)((判决如下|裁定如下|判处如下|判决)(.*))")
+    matcher1 = re.match(judge_pattern, document)#在源文本中搜索符合正则表达式的部分
+    if matcher1:
+        content_wordlist = myseg.paraph2word(get_details(matcher1.group(1)))
+        result_wordlist = myseg.paraph2word(matcher1.group(2))
+    else:
+        content_wordlist = myseg.paraph2word(get_details(document))
+        result_wordlist = []
+    return content_wordlist, result_wordlist
+class TwoDict(object):
+    def __init__(self):
+        self.word2id = dict()
+        self.id2word = dict()
+
+
+
+def get_criminal_dict(opt_document):
+    it = opt_document.getCriminalOnSql()
+    word2id = dict()
+    count = 0
+    for crim in it:
+        # print(crim[0])
+        word2id[crim[0]] = count
+        count+=1
+    return word2id
+
+def seg_data(opt_document, myseg, mypos):
+
+    word2id = get_criminal_dict(opt_document)
+    print(word2id)
+
     content_list = list()
     result_list = list()
     id_list = list()
+    criminal_list = list()
+    iter = opt_document.findall()
     index = 0
-    iter = opt_Document.findbycriminal(criminal)
-
-    for i in iter:
-        index += 1
-        content_wordlist, result_wordlist = content_resultforword2vec(myseg, i[25])
+    for it in iter[]:
+        content_wordlist, result_wordlist = content_resultforword2vec(myseg, it[25])
         content_wordlist = mypos.words2pos(content_wordlist, ['n', 'nl', 'ns', 'v'])
         result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
+
         content_list.append(content_wordlist)
         result_list.append(result_wordlist)
-        id_list.append(i[0])
+        id_list.append(it[0])
+        criminal_list.append(word2id[it[26]])
 
-    res_dict = {'id_list': id_list,
-                'criminal': criminal,
-                'content_wordlist':content_list,
-                'result_wordlisr': result_list
-                }
+        index += 1
+        if index % 10000:
+            save_dict = {'id_list':}
 
-    with open(BasePath + "/seg_corpus/"+criminal + ".json", 'wb') as fp:
-        encode_json = json.dump(res_dict, fp, ensure_ascii=False)
-    return index
+# def seg_criminal_data(criminal, myseg, mypos, opt_document):
+#     print(1)
+#     content_list = list()
+#     result_list = list()
+#     id_list = list()
+#     index = 0
+#     iter = opt_document.findbycriminal(criminal)
+#
+#     for i in iter:
+#         index += 1
+#         content_wordlist, result_wordlist = content_resultforword2vec(myseg, i[25])
+#         content_wordlist = mypos.words2pos(content_wordlist, ['n', 'nl', 'ns', 'v'])
+#         result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
+#         content_list.append(content_wordlist)
+#         result_list.append(result_wordlist)
+#         id_list.append(i[0])
+#
+#     res_dict = {'id_list': id_list,
+#                 'criminal': criminal,
+#                 'content_wordlist':content_list,
+#                 'result_wordlist': result_list
+#                 }
+#
+#     with open(BasePath + "/seg_corpus/"+criminal + ".json", 'wb') as fp:
+#         encode_json = json.dump(res_dict, fp, ensure_ascii=False)
+#     return index
 
+
+
+
+
+
+    #     res_dict = {'id_list': id_list,
+    #                 'criminal': criminal,
+    #                 'content_wordlist':content_list,
+    #                 'result_wordlisr': result_list
+    #                 }
 
 if __name__ == "__main__":
     print(1)
     shuffle_indices = np.random.permutation(5)
     print(shuffle_indices)
 
-
-    criminal_list = ['交通肇事罪',  # 危险驾驶罪（危险 驾驶罪）
-                     '过失致人死亡罪', # 故意杀人罪（故意 杀人 杀人罪） 故意伤害罪（故意 伤害 伤害罪）
-                      '故意杀人罪',
-                      '故意伤害罪',
-                      '过失致人重伤罪',
-                      '抢劫罪',
-                      '诈骗罪', #（诈骗 诈骗罪 诈骗案）
-                      '拐卖妇女儿童罪'
-                      ]
-
-    opt_Document = DocumentsOnMysql()
+    opt_document = DocumentsOnMysql()
     myseg = MySegment()
     mypos = MyPostagger()
 
-    test = [seg_criminal_data(criminal, myseg, mypos, opt_Document) for criminal in criminal_list]
-    print(test)
+    seg_data(opt_document, myseg, mypos)
+
+
+
+
+
+
+
+    # criminal_list = ['交通肇事罪',  # 危险驾驶罪（危险 驾驶罪）
+    #                  '过失致人死亡罪', # 故意杀人罪（故意 杀人 杀人罪） 故意伤害罪（故意 伤害 伤害罪）
+    #                   '故意杀人罪',
+    #                   '故意伤害罪',
+    #                   '过失致人重伤罪',
+    #                   '抢劫罪',
+    #                   '诈骗罪', #（诈骗 诈骗罪 诈骗案）
+    #                   '拐卖妇女儿童罪'
+    #                   ]
+    #
+    # opt_Document = DocumentsOnMysql()
+    # myseg = MySegment()
+    # mypos = MyPostagger()
+    #
+    # document_all_id_list, document_list = get_criminal_list_data(opt_Document, criminal_list)
+    # np.savetxt(BasePath + "/data/document_full_finance_index.txt", np.array(document_all_id_list))
+
+
 
 
     # content_list = list()
@@ -149,18 +226,6 @@ if __name__ == "__main__":
     # dev_sample_percentage = .3
     # filepath_list = [BasePath + "/data/judgment" +"full_finance_" +str(i)+ "_" + ".txt" for i in range(0,8)]
     # x_data, y_data = read_seg_document_list(filepath_list)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
