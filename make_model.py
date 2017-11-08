@@ -130,7 +130,11 @@ def seg_data(opt_document, myseg, mypos):
 
         index += 1
         if index % 10000:
-            save_dict = {'id_list':}
+            save_dict = {'id_list': id_list,
+                         'criminal_list': criminal_list,
+                         'content_wordlist': content_list,
+                         'result_wordlist': result_list}
+
 
 # def seg_criminal_data(criminal, myseg, mypos, opt_document):
 #     print(1)
