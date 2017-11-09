@@ -1,5 +1,6 @@
 #coding=utf8
 from My_BasePath import *
+import gensim
 import numpy as np
 import matplotlib as mpl
 from optOnMysql.DocumentsOnMysql import *
@@ -118,7 +119,9 @@ def seg_data(opt_document, myseg, mypos):
     criminal_list = list()
     iter = opt_document.findall()
     index = 0
-    for it in iter[]:
+    save_index = 0
+    for it in iter:
+        print(index)
         content_wordlist, result_wordlist = content_resultforword2vec(myseg, it[25])
         content_wordlist = mypos.words2pos(content_wordlist, ['n', 'nl', 'ns', 'v'])
         result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
@@ -128,51 +131,35 @@ def seg_data(opt_document, myseg, mypos):
         id_list.append(it[0])
         criminal_list.append(word2id[it[26]])
 
-        index += 1
-        if index % 10000:
+        if index % 10000 == 0:
+            print("~~~~~~~~~~~~~~~{}~~~~~~~~~~~~~~~~~".format(index))
             save_dict = {'id_list': id_list,
                          'criminal_list': criminal_list,
                          'content_wordlist': content_list,
                          'result_wordlist': result_list}
+            with open(BasePath + "/seg_corpus/data_corpus"+str(save_index)+".json", 'wb') as fp:
+                json.dump(save_dict, fp, ensure_ascii=False)
+                print("save data in the file {}".format(BasePath + "/seg_corpus/data_corpus"+str(save_index)+".json"))
+            save_index += 1
 
+            criminal_list = list()
+            content_list = list()
+            result_list = list()
+            id_list = list()
+        index += 1
 
-# def seg_criminal_data(criminal, myseg, mypos, opt_document):
-#     print(1)
-#     content_list = list()
-#     result_list = list()
-#     id_list = list()
-#     index = 0
-#     iter = opt_document.findbycriminal(criminal)
-#
-#     for i in iter:
-#         index += 1
-#         content_wordlist, result_wordlist = content_resultforword2vec(myseg, i[25])
-#         content_wordlist = mypos.words2pos(content_wordlist, ['n', 'nl', 'ns', 'v'])
-#         result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
-#         content_list.append(content_wordlist)
-#         result_list.append(result_wordlist)
-#         id_list.append(i[0])
-#
-#     res_dict = {'id_list': id_list,
-#                 'criminal': criminal,
-#                 'content_wordlist':content_list,
-#                 'result_wordlist': result_list
-#                 }
-#
-#     with open(BasePath + "/seg_corpus/"+criminal + ".json", 'wb') as fp:
-#         encode_json = json.dump(res_dict, fp, ensure_ascii=False)
-#     return index
+    if len(content_list) > 0:
+        print("the len of the data left is: {}".format(len(content_list)))
+        save_dict = {'id_list': id_list,
+                     'criminal_list': criminal_list,
+                     'content_wordlist': content_list,
+                     'result_wordlist': result_list}
+        with open(BasePath + "/seg_corpus/data_corpus" + str(save_index) + ".json", 'wb') as fp:
+            json.dump(save_dict, fp, ensure_ascii=False)
+            print("save data in the file {}".format(BasePath + "/seg_corpus/data_corpus" + str(save_index) + ".json"))
 
+    print("finish all the data segment, the number of files is: {}".format(index))
 
-
-
-
-
-    #     res_dict = {'id_list': id_list,
-    #                 'criminal': criminal,
-    #                 'content_wordlist':content_list,
-    #                 'result_wordlisr': result_list
-    #                 }
 
 if __name__ == "__main__":
     print(1)
@@ -183,10 +170,15 @@ if __name__ == "__main__":
     myseg = MySegment()
     mypos = MyPostagger()
 
-    seg_data(opt_document, myseg, mypos)
+    # seg_data(opt_document, myseg, mypos)
+    # corpus2word2vec(x_data)
 
-
-
+    x_data = ["我 的 名字 叫 杨泽。".decode('utf8').split(' '),
+              "今天 天气 很好".decode('utf8').split(' '),
+              "月亮 很圆 很大 很好看".decode('utf8').split(' ')]
+    print(x_data)
+    model1 = gensim.models.Word2Vec(x_data, size=100, window=5, min_count=1, workers=20)
+    # print(model1['月亮'])
 
 
 
