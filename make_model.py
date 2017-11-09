@@ -179,7 +179,7 @@ if __name__ == "__main__":
     print(x_data)
     model1 = gensim.models.Word2Vec(x_data, size=100, window=5, min_count=1, workers=20)
     # print(model1['月亮'])
-
+ #
 
 
 
