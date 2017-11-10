@@ -160,26 +160,102 @@ def seg_data(opt_document, myseg, mypos):
 
     print("finish all the data segment, the number of files is: {}".format(index))
 
+def read_from_data_corpus(filepath):
+    with open(filepath, 'rb') as fp:
+        decode_json = json.load(fp)
+    return decode_json
+
+def train_w2v(filepath_list, model_savepath):
+    for index, filepath in enumerate(filepath_list):
+        print(filepath)
+        x_data = read_from_data_corpus(filepath)['content_wordlist']
+        if index == 0:
+            model = gensim.models.Word2Vec(x_data, size=100, window=5, min_count=5, workers=20)
+        else:
+            model.train(x_data)
+    model.save(model_savepath)
+    return model
+
+def get_filepath_list_from_dir(dirpath):
+    filepath_list = []
+    for root, dirs, files in os.walk(dirpath):
+        for file in files:
+            filepath_list.append(os.path.join(root, file))
+    return filepath_list
+def corpus2vec(w2v_model, filepath_list, vec_type = "average"):
+    print("~~~~~~~~~~~")
+    random_vector = np.random.normal(size = 100)
+    for filepath in filepath_list:
+        data = read_from_data_corpus(filepath)
+        file_name = filepath.split('/')[-1]
+
+        id_list, x_data, y_data = data['id_list'],\
+                                  data['content_wordlist'],\
+                                  data['criminal_list']
+        i = 0
+        corpus_vec = list()
+        for sentence in x_data:
+            print(i)
+            tmp_num = sentence2vec(w2v_model, sentence, randomvec = random_vector, vec_type = vec_type)
+            corpus_vec.append(tmp_num)
+            i += 1
+        np.savetxt(file_name + "_w2v" + ".txt", np.array(corpus_vec))
+        save_dict = { 'id_list': data['id_list'],
+                      'criminal_list': data['criminal_list']
+                    }
+        with open(file_name + "_index"+".json", 'wb') as fp:
+            json.dump(save_dict, fp, ensure_ascii=False)
+        print("save data in the file {}".format(file_name + "_index" + ".json"))
+
+def load_model(model_filepath):
+    model = gensim.models.Word2Vec.load(model_filepath)
+    return model
+
+
 
 if __name__ == "__main__":
-    print(1)
+    # print(1)
     shuffle_indices = np.random.permutation(5)
     print(shuffle_indices)
 
-    opt_document = DocumentsOnMysql()
-    myseg = MySegment()
-    mypos = MyPostagger()
-
+    # 将数据库中的数据进行分词，存储为文件
+    # opt_document = DocumentsOnMysql()
+    # myseg = MySegment()
+    # mypos = MyPostagger()
     # seg_data(opt_document, myseg, mypos)
-    # corpus2word2vec(x_data)
 
-    x_data = ["我 的 名字 叫 杨泽。".decode('utf8').split(' '),
-              "今天 天气 很好".decode('utf8').split(' '),
-              "月亮 很圆 很大 很好看".decode('utf8').split(' ')]
-    print(x_data)
-    model1 = gensim.models.Word2Vec(x_data, size=100, window=5, min_count=1, workers=20)
-    # print(model1['月亮'])
- #
+    # 训练词向量
+    # filepath_list = get_filepath_list_from_dir(BasePath + "/seg_corpus")
+    # filepath_list.sort()
+    # print(filepath_list)
+    # model_savepath = BasePath + "/w2v_model/corpus_w2v_model"
+    # model = train_w2v(filepath_list, model_savepath)
+
+    # 将语料转换为向量，存储到本地
+    # model_filepath = BasePath + "/w2v_model/corpus_w2v_model"
+    # w2v_model = load_model(model_filepath)
+    filepath_list = get_filepath_list_from_dir(BasePath + "/seg_corpus")
+    filepath_list.sort()
+    for filepath in filepath_list:
+        print(filepath.split('/'))
+
+    # corpus2vec(w2v_model, filepath_list)
+
+    #
+
+
+
+
+
+    # x_data = ["我 的 名字 叫 杨泽。".decode('utf8').split(' '),
+    #           "今天 天气 很好".decode('utf8').split(' '),
+    #           "月亮 很圆 很大 很好看".decode('utf8').split(' ')]
+    # print(x_data)
+    # model1 = gensim.models.Word2Vec(x_data, size=100, window=5, min_count=1, workers=20)
+    # print(model1['月亮'.decode('utf8')])
+
+
+
 
 
 
