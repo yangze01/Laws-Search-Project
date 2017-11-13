@@ -107,7 +107,7 @@ def sentences2docvec(model, sentences, vec_type = "average"):
     np.savetxt(BasePath + "/word2vec_model/corpus_w2v_full_finance_" + vec_type + ".txt", np.array(corpus_vec))
 
 def corpus2word2vec(x_data):
-    # w2v_model = load_model()
+    # model = load_model()
     sentences2docvec(w2v_model, x_data)
 
 def get_candidate(topn, query_vec, corpus_vec):

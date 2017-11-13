@@ -1,11 +1,20 @@
 #coding=utf8
 from My_BasePath import *
 import gensim
+import datetime
+
 import numpy as np
 import matplotlib as mpl
+from sklearn.externals import joblib
+from sklearn.manifold import TSNE
+from sklearn.metrics import confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import Imputer
+from scipy.sparse.csr import csr_matrix
 from optOnMysql.DocumentsOnMysql import *
 from data_helper import *
 import matplotlib.pyplot as plt
+import pickle
 from seg_main import *
 myfont = mpl.font_manager.FontProperties(fname="/usr/share/fonts/truetype/wqy/wqy-microhei.ttc")
 mpl.rcParams['axes.unicode_minus'] = False
@@ -131,7 +140,7 @@ def seg_data(opt_document, myseg, mypos):
         id_list.append(it[0])
         criminal_list.append(word2id[it[26]])
 
-        if index % 10000 == 0:
+        if index % 10000 == 0 and index != 0:
             print("~~~~~~~~~~~~~~~{}~~~~~~~~~~~~~~~~~".format(index))
             save_dict = {'id_list': id_list,
                          'criminal_list': criminal_list,
@@ -187,8 +196,8 @@ def corpus2vec(w2v_model, filepath_list, vec_type = "average"):
     random_vector = np.random.normal(size = 100)
     for filepath in filepath_list:
         data = read_from_data_corpus(filepath)
-        file_name = filepath.split('/')[-1]
-
+        # file_name = filepath.split('/')[-1]
+        filepath, file_name = '/'.join(filepath.split('/')[0:-2]), filepath.split('/')[-1].split('.')[0]
         id_list, x_data, y_data = data['id_list'],\
                                   data['content_wordlist'],\
                                   data['criminal_list']
@@ -199,18 +208,61 @@ def corpus2vec(w2v_model, filepath_list, vec_type = "average"):
             tmp_num = sentence2vec(w2v_model, sentence, randomvec = random_vector, vec_type = vec_type)
             corpus_vec.append(tmp_num)
             i += 1
-        np.savetxt(file_name + "_w2v" + ".txt", np.array(corpus_vec))
+        np.savetxt(filepath + "/w2v_corpus/w2v_" + file_name + ".txt", np.array(corpus_vec))
         save_dict = { 'id_list': data['id_list'],
                       'criminal_list': data['criminal_list']
                     }
-        with open(file_name + "_index"+".json", 'wb') as fp:
+        with open(filepath + "/w2v_corpus/index_"+ file_name + ".json", 'wb') as fp:
             json.dump(save_dict, fp, ensure_ascii=False)
-        print("save data in the file {}".format(file_name + "_index" + ".json"))
+        print("save data in the file {}".format(filepath + "/w2v_corpus/index_"+ file_name + ".json"))
 
 def load_model(model_filepath):
     model = gensim.models.Word2Vec.load(model_filepath)
     return model
 
+# def randomforest_partition_train(x_data, y_data, save_model_path):
+
+def randomforest_train(data_path, save_model_path):
+    num_topics = 100
+    dev_sample_percentage = .2
+    index_list = list()
+    w2v_list = list()
+    for root, dirs, files in os.walk(data_path):
+        for file in files:
+            if os.path.splitext(file)[1] == '.txt':
+                w2v_list.append(file)
+            elif os.path.splitext(file)[1] == '.json':
+                index_list.append(file)
+    index_list.sort()
+    w2v_list.sort()
+    x_sample = list()
+    y_sample = list()
+    for index_path, w2v_path in zip(index_list, w2v_list):
+        with open(BasePath + "/w2v_corpus/" + index_path, 'rb') as fp:
+            y_sample += json.load(fp)['criminal_list']
+
+        x_sample += list(np.loadtxt(BasePath + "/w2v_corpus/" + w2v_path))
+
+    x_sample = np.array(x_sample)
+    y_sample = np.array(y_sample)
+    print("the shape of x_sample and y_sample")
+    print(x_sample.shape)
+    print(y_sample.shape)
+    x_train, x_test, y_train, y_test = dev_sample(x_sample, y_sample, dev_sample_percentage)
+    if os.path.exists(save_model_path):
+        print("the model already exists.")
+    else:
+        print("the model doesn't exists.")
+        clf = RandomForestClassifier(n_estimators=100, bootstrap = True, oob_score = False , n_jobs = 16)
+        clf.fit(x_train, y_train)
+        joblib.dump(clf, save_model_path)
+    clf_pre = clf.predict(x_test)
+    acc = (clf_pre == y_test).mean()
+    print("精度为：")
+    print(acc)
+    return clf
+
+def get_rfpath(model_path, )
 
 
 if __name__ == "__main__":
@@ -228,97 +280,19 @@ if __name__ == "__main__":
     # filepath_list = get_filepath_list_from_dir(BasePath + "/seg_corpus")
     # filepath_list.sort()
     # print(filepath_list)
-    # model_savepath = BasePath + "/w2v_model/corpus_w2v_model"
+    # model_savepath = BasePath + "/model/corpus_w2v_model"
     # model = train_w2v(filepath_list, model_savepath)
 
     # 将语料转换为向量，存储到本地
-    # model_filepath = BasePath + "/w2v_model/corpus_w2v_model"
-    # w2v_model = load_model(model_filepath)
-    filepath_list = get_filepath_list_from_dir(BasePath + "/seg_corpus")
-    filepath_list.sort()
-    for filepath in filepath_list:
-        print(filepath.split('/'))
+    # model_filepath = BasePath + "/model/corpus_w2v_model"
+    # model = load_model(model_filepath)
+    # filepath_list = get_filepath_list_from_dir(BasePath + "/seg_corpus")
+    # filepath_list.sort()
+    # corpus2vec(model, filepath_list)
 
-    # corpus2vec(w2v_model, filepath_list)
-
-    #
-
-
-
-
-
-    # x_data = ["我 的 名字 叫 杨泽。".decode('utf8').split(' '),
-    #           "今天 天气 很好".decode('utf8').split(' '),
-    #           "月亮 很圆 很大 很好看".decode('utf8').split(' ')]
-    # print(x_data)
-    # model1 = gensim.models.Word2Vec(x_data, size=100, window=5, min_count=1, workers=20)
-    # print(model1['月亮'.decode('utf8')])
-
-
-
-
-
-
-    # criminal_list = ['交通肇事罪',  # 危险驾驶罪（危险 驾驶罪）
-    #                  '过失致人死亡罪', # 故意杀人罪（故意 杀人 杀人罪） 故意伤害罪（故意 伤害 伤害罪）
-    #                   '故意杀人罪',
-    #                   '故意伤害罪',
-    #                   '过失致人重伤罪',
-    #                   '抢劫罪',
-    #                   '诈骗罪', #（诈骗 诈骗罪 诈骗案）
-    #                   '拐卖妇女儿童罪'
-    #                   ]
-    #
-    # opt_Document = DocumentsOnMysql()
-    # myseg = MySegment()
-    # mypos = MyPostagger()
-    #
-    # document_all_id_list, document_list = get_criminal_list_data(opt_Document, criminal_list)
-    # np.savetxt(BasePath + "/data/document_full_finance_index.txt", np.array(document_all_id_list))
-
-
-
-
-    # content_list = list()
-    # result_list = list()
-    # for i in it:
-    #     print(i[0]) # id
-    #     print(i[26])
-    #     # print(i[25]) # content
-    #     content_wordlist, result_wordlist = content_resultforword2vec(myseg, i[25])
-    #     content_wordlist = mypos.words2pos(content_wordlist,  ['n', 'nl', 'ns', 'v'])
-    #     result_wordlist = mypos.words2pos(result_wordlist, ['n', 'nl', 'ns', 'v'])
-    #     content_list.append(content_wordlist)
-    #     result_list.append(result_wordlist)
-    # myseg.close()
-    # mypos.close()
-    # print("-----------------------------------------")
-
-    # num_topics = 100
-    # dev_sample_percentage = .3
-    # filepath_list = [BasePath + "/data/judgment" +"full_finance_" +str(i)+ "_" + ".txt" for i in range(0,8)]
-    # x_data, y_data = read_seg_document_list(filepath_list)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # 训练随机森林
+    # data_dir = BasePath + "/w2v_corpus"
+    # save_model_name = BasePath + "/model/rf_model"
+    # clf_model = randomforest_train(data_dir, save_model_name)
 
 
