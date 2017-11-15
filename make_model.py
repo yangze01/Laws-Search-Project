@@ -2,8 +2,8 @@
 from My_BasePath import *
 import gensim
 import datetime
-
 import numpy as np
+from scipy import io
 import matplotlib as mpl
 from sklearn.externals import joblib
 from sklearn.manifold import TSNE
@@ -262,7 +262,40 @@ def randomforest_train(data_path, save_model_path):
     print(acc)
     return clf
 
-def get_rfpath(model_path, )
+def get_one_rfpath(model_path, vec):
+    if os.path.exists(model_path):
+        print("the model already exists.")
+        clf = joblib.load(model_path)
+    else:
+        print("the model doesn't exists.")
+        return None
+
+    path = clf.decision_path(vec)
+    return path
+
+
+def save_randomforest_path(model_path, w2v_path):
+    if os.path.exists(model_path):
+        print("the model already exists.")
+        clf = joblib.load(model_path)
+    else:
+        print("the model doesn't exists.")
+        return None
+
+    w2v_list = list()
+    for root, dirs, files in os.walk(w2v_path):
+        for file in files:
+            if os.path.splitext(file)[1] == '.txt':
+                w2v_list.append(file)
+    w2v_list.sort()
+    for w2v_name in w2v_list:
+        filename = BasePath + "/w2v_corpus/" + w2v_name
+        w2v_vec = np.loadtxt(filename)
+        print(w2v_vec.shape)
+        path_of_sample, _ = clf.decision_path(w2v_vec)
+        save_file_path = BasePath + "/rf_path/" + "path_" + w2v_name.split('.')[0] + ".mtx"
+        io.mmwrite(save_file_path, path_of_sample)
+
 
 
 if __name__ == "__main__":
@@ -294,5 +327,20 @@ if __name__ == "__main__":
     # data_dir = BasePath + "/w2v_corpus"
     # save_model_name = BasePath + "/model/rf_model"
     # clf_model = randomforest_train(data_dir, save_model_name)
+
+    # 获取随机森林路径
+    # rf_model_path = BasePath + "/model/rf_model"
+    # w2v_corpus = np.loadtxt(BasePath + "/w2v_corpus/w2v_data_corpus0.txt")
+    # w2v_path = BasePath + "/w2v_corpus"
+    # vec = w2v_corpus[0]
+    # path = get_one_rfpath(rf_model_path, vec)
+    # save_randomforest_path(rf_model_path, w2v_path)
+
+
+
+
+
+
+
 
 
